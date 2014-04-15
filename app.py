@@ -1,14 +1,18 @@
 from flask import Flask
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/foo/")
 def hello():
-    return "Hello Flask World!"
+    return """<html>
+        <h1>Hello Foo Flask World!</h1>
+    </html>"""
 
 
 import urlparse
+import urllib
 from werkzeug.wrappers import Request, Response
-from werkzeug.wsgi import get_query_string
+from werkzeug import wsgi
+import selenium.webdriver
 
 
 class AjaxCrawlingMiddleware(object):
@@ -21,8 +25,7 @@ class AjaxCrawlingMiddleware(object):
         super(AjaxCrawlingMiddleware, self).__init__()
 
     def __call__(self, environ, start_response):
-        qs_dict = urlparse.parse_qs(get_query_string(environ), keep_blank_values=True)
-        #import ipdb; ipdb.set_trace()
+        qs_dict = urlparse.parse_qs(wsgi.get_query_string(environ), keep_blank_values=True)
         if '_escaped_fragment_' in qs_dict:
             app_iter = ajax_crawled_application(environ, start_response)
         else:
@@ -33,12 +36,29 @@ class AjaxCrawlingMiddleware(object):
 
 def ajax_crawled_application(environ, start_response):
     request = Request(environ)
-    text = 'Hello Werkzeug %s!' % request.args.get('name', 'World')
-    response = Response(text, mimetype='text/plain')
+    ugly_url = request.url
+    pretty_url = None
+
+    qs_dict = urlparse.parse_qs(request.query_string, keep_blank_values=True)
+    fragment = qs_dict.pop('_escaped_fragment_')[0]
+    if fragment:
+        raise NotImplementedError()
+
+    pretty_qs = urllib.urlencode(qs_dict, doseq=True)
+    pretty_url = request.host_url.strip('/') + request.path + '?' + pretty_qs
+
+    driver = selenium.webdriver.PhantomJS()
+    driver.get(pretty_url)
+    html_snapshot = driver.page_source
+    driver.quit()
+
+    text = html_snapshot
+    response = Response(text, mimetype='text/html') # MIME is just a sane guess
     return response(environ, start_response)
 
 app.wsgi_app = AjaxCrawlingMiddleware(app.wsgi_app)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
+    app.run(processes=3)
 
