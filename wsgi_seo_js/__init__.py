@@ -31,12 +31,13 @@ class AjaxCrawlingMiddleware(object):
     
         qs_dict = urlparse.parse_qs(request.query_string, keep_blank_values=True)
         fragment = qs_dict.pop('_escaped_fragment_')[0]
-        if fragment:
-            raise NotImplementedError('Not handling non-empty fragments (yet)')
-    
+
         pretty_qs = urllib.urlencode(qs_dict, doseq=True)
         pretty_url = request.host_url.strip('/') + request.path + '?' + pretty_qs
-    
+        if fragment:
+            pretty_url += '#!' + fragment #.encode('quopri') ??
+            raise NotImplementedError('Not handling non-empty fragments (yet)')
+
         driver = selenium.webdriver.PhantomJS()
         driver.get(pretty_url)
         html_snapshot = driver.page_source
