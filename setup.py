@@ -12,7 +12,10 @@ setup(
     author_email = 'alan.justino@yahoo.com.br',
     url = 'http://github.com/alanjds/wsgi-seo-js',
     #download_url = 'https://github.com/alanjds/wsgi-seo-js/tarball/'+VERSION,
-    install_requires = [],
+    install_requires = [
+        'werkzeug',
+        'selenium',
+    ],
     tests_require = [],
     test_suite = 'tests.suite',
     description = "WSGI middleware that implements Google's Ajax Crawling specs",
